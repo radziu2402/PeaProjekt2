@@ -1,15 +1,19 @@
 package algorithm;
 
 import data.Matrix;
+import data.TimeResultPair;
 
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TabuSearch {
     private long bestSolutionTime;
     private final Matrix graph;
     public int[] bestPath;
     public int bestCost = Integer.MAX_VALUE;
-    Random rand = new Random();
     private final long timeLimit;
     private final NeighborOperator neighborOperator;
 
@@ -31,16 +35,19 @@ public class TabuSearch {
         int[] currentPath;
         int[] nextPath;
         int[][] tabuMatrix = new int[graph.size][graph.size];
-        int iterations = 10 * graph.size;
+        int iterations = (10 * graph.size);
         int nextCost;
         int currentCost;
         int[] savePath;
-        bestCost = Integer.MAX_VALUE;
+        List<TimeResultPair> solutions = new ArrayList<>();
+        int iterationsWithoutImprovement = 0;
+        int maxIterationsWithoutImprovement = 1000000;
         long startTime = System.currentTimeMillis();
 
-        // Generowanie początkowego rozwiązania za pomocą algorytmu zachłannego
         currentPath = generateGreedyPath();
         currentCost = calculatePathCost(currentPath);
+        bestCost = currentCost;
+        solutions.add(new TimeResultPair(System.currentTimeMillis() - startTime, currentCost));
         System.out.println("Tabu search:");
         System.out.println("Koszt ścieżki według algorytmu zachłannego: " + currentCost);
 
@@ -60,11 +67,13 @@ public class TabuSearch {
                             bestPath = currentPath.clone();
                             bestCost = currentCost;
                             bestSolutionTime = System.currentTimeMillis() - startTime;
+                            solutions.add(new TimeResultPair(bestSolutionTime, bestCost));
                             if (tabuMatrix[i][j] == 0) {
                                 nextCost = currentCost;
                                 nextPath = currentPath.clone();
                             }
-                        }
+                        } else iterationsWithoutImprovement++;
+
 
                         if (currentCost < nextCost && tabuMatrix[i][j] < a) {
                             nextCost = currentCost;
@@ -74,6 +83,14 @@ public class TabuSearch {
 
                         currentPath = savePath.clone();
                     }
+                }
+
+
+                if (iterationsWithoutImprovement >= maxIterationsWithoutImprovement) {
+                    nextPath = shufflePath(currentPath);
+                    currentPath = nextPath;
+                    iterationsWithoutImprovement = 0;
+                    tabuMatrix = new int[graph.size][graph.size];
                 }
 
                 for (int x = 0; x < graph.size; x++) {
@@ -94,10 +111,20 @@ public class TabuSearch {
                     System.out.println("0]");
                     System.out.println("Koszt ścieżki: " + bestCost);
                     System.out.println("Najlepsze rozwiązanie znaleziono w: " + bestSolutionTime + " ms");
+                    System.out.println("Lista wyników:");
+                    for (TimeResultPair solution : solutions) {
+                        System.out.println("Czas: " + solution.getTime() + " ms, Wynik: " + solution.getResult());
+                    }
                     return;
                 }
             }
         }
+    }
+
+    private int[] shufflePath(int[] path) {
+        List<Integer> pathList = Arrays.stream(path).boxed().collect(Collectors.toList());
+        Collections.shuffle(pathList);
+        return pathList.stream().mapToInt(Integer::intValue).toArray();
     }
 
     private int[] generateGreedyPath() {
@@ -122,21 +149,6 @@ public class TabuSearch {
         }
 
         return greedyPath;
-    }
-
-    private int[] generateRandomPath() { //generowanie losowej ścieżki
-        int[] randomPath = new int[graph.size];
-        for (int i = 0; i < graph.size; i++) {
-            randomPath[i] = i;
-        }
-        for (int i = 1; i < randomPath.length; i++) {//funkcja losująca kolejność
-            int randomIndexToSwap = rand.nextInt(randomPath.length - 1) + 1;
-            int temp = randomPath[randomIndexToSwap];
-            randomPath[randomIndexToSwap] = randomPath[i];
-            randomPath[i] = temp;
-        }
-
-        return randomPath;
     }
 
     private int calculatePathCost(int[] path) {

@@ -3,13 +3,10 @@ package data;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Scanner;
+
 
 public class FromFileReader {
-    public Matrix loadFromFile() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Podaj nazwę pliku z danymi:");
-        String fileName = scanner.nextLine();
+    public Matrix loadFromFile(String fileName) {
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(fileName));

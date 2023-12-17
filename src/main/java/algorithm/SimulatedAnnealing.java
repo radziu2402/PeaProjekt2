@@ -1,6 +1,7 @@
 package algorithm;
 
 import data.Matrix;
+import data.TimeResultPair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,38 +25,45 @@ public class SimulatedAnnealing {
 
 
     public void solve() {
-        List<Integer> nearestNeighbourSolution = generateGreedyPath();
-        int bestCost = calculatePathCost(nearestNeighbourSolution);
-        List<Integer> bestPath = new ArrayList<>(nearestNeighbourSolution);
-        List<Integer> currentPath = new ArrayList<>(nearestNeighbourSolution);
+        double temperature = calculateInitialTemperature();
+        List<TimeResultPair> solutions = new ArrayList<>();
+        long startTime = System.currentTimeMillis();
+
+        // Generowanie początkowego rozwiązania za pomocą algorytmu zachłannego
+        List<Integer> greedySolution = generateGreedyPath();
+        int bestCost = calculatePathCost(greedySolution);
+        List<Integer> bestPath = new ArrayList<>(greedySolution);
+        List<Integer> currentPath = new ArrayList<>(greedySolution);
+        solutions.add(new TimeResultPair(System.currentTimeMillis() - startTime, bestCost));
         System.out.println("Symulowane wyżarzanie:");
         System.out.println("Koszt ścieżki według algorytmu zachłannego: " + bestCost);
 
-        double temperature = calculateInitialTemperature();
-
-        long startTime = System.currentTimeMillis();
-
-
         while (System.currentTimeMillis() - startTime < timeLimit) {
-            List<Integer> neighbour = getNeighbours(currentPath);
-            int neighbourCost = calculatePathCost(neighbour);
+            for (int i = 0; i < 3; ++i) {
+                List<Integer> neighbour = getNeighbours(currentPath);
+                int neighbourCost = calculatePathCost(neighbour);
 
-            if (acceptMove(bestCost, neighbourCost, temperature)) {
-                currentPath = new ArrayList<>(neighbour);
+                if (acceptMove(bestCost, neighbourCost, temperature)) {
+                    currentPath = new ArrayList<>(neighbour);
 
-                if (neighbourCost < bestCost) {
-                    bestPath = new ArrayList<>(neighbour);
-                    bestCost = neighbourCost;
-                    bestSolutionTime = System.currentTimeMillis() - startTime;
+                    if (neighbourCost < bestCost) {
+                        bestPath = new ArrayList<>(neighbour);
+                        bestCost = neighbourCost;
+                        bestSolutionTime = System.currentTimeMillis() - startTime;
+                        solutions.add(new TimeResultPair(bestSolutionTime, bestCost));
+                    }
                 }
             }
-
             temperature *= coolingRate;
         }
 
         System.out.println("Najlepsza znaleziona ścieżka: " + bestPath);
+        bestPath.add(0);
         System.out.println("Koszt ścieżki: " + bestCost);
         System.out.println("Najlepsze rozwiązanie znaleziono w: " + bestSolutionTime + " ms");
+        for (TimeResultPair solution : solutions) {
+            System.out.println("Czas: " + solution.getTime() + " ms, Wynik: " + solution.getResult());
+        }
     }
 
     private List<Integer> generateGreedyPath() {
@@ -108,7 +116,6 @@ public class SimulatedAnnealing {
                 makeInsertMove(neighbour);
                 break;
         }
-
         return neighbour;
     }
 
@@ -178,7 +185,7 @@ public class SimulatedAnnealing {
         Collections.sort(deltas);
         double medianDelta = deltas.get(SAMPLE_NUMBER / 2);
 
-        final double P = 0.85;
+        final double P = 0.55;
         return -medianDelta / Math.log(P);
     }
 

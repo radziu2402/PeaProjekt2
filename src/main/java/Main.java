@@ -32,7 +32,9 @@ public class Main {
             menu = scanner.nextInt();
             switch (menu) {
                 case 1 -> {
-                    matrix = new FromFileReader().loadFromFile();
+                    System.out.println("Podaj nazwę pliku z danymi:");
+                    Scanner sc = new Scanner(System.in);
+                    matrix = new FromFileReader().loadFromFile(sc.nextLine());
                 }
                 case 2 -> {
                     System.out.println("Podaj liczbę miast:");
